@@ -5,23 +5,14 @@
 
 
 import json
-
 import re
-
 import urllib.parse
-
 from urllib.parse import urlparse, parse_qs
-
-
-
 import telebot  # type: ignore
-
 from aliexpress_api import AliexpressApi, models
-
 from keep_alive import keep_alive
-
 from telebot import types
-
+from flask import Flask  # لإضافة السيرفر
 
 
 bot = telebot.TeleBot('7259038504:AAHM1zUacyc1sXVRqruVOwPMOA2NmrKZ_BA')
@@ -468,14 +459,15 @@ def extract_redirect_url(final_link):
 
         return final_link.split("?")[0]
 
+# سيرفر Flask
+app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return "The bot is running successfully!"
 
-# تأكد أن السيرفر يعمل باستخدام keep_alive
-
+# التأكد أن السيرفر يعمل
 keep_alive()
 
-
-
-# بدء عملية "polling" للبوت
-
+# بدء البوت
 bot.infinity_polling(timeout=10, long_polling_timeout=5)
