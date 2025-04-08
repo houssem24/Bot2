@@ -20,7 +20,7 @@ SECRET = '5GD1pusR40ORZvdLSPwHIpzddVlwh1dI'
 TRACKING_ID = 'default'
 
 # إعدادات Telegram Bot
-API_KEY = '5337612436:AAGQZF8W9JKi1ySP4CBzN4unuA5FJc9ZaMI'
+API_KEY = '5337612436:AAH_yJtWGr0x_qvYHuLj5JTaNB5CIfxaD9I'
 bot = telebot.TeleBot(API_KEY)
 
 def extract_links(text):
