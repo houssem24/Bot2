@@ -5,13 +5,12 @@
 import json
 import re
 import urllib.parse
-from urllib.parse import urlparse, parse_qs, urlunparse  # أضف urlunparse هنا
+from urllib.parse import urlparse, parse_qs, urlunparse
 import telebot  # Telegram API library
 from aliexpress_api import AliexpressApi, models
 from telebot import types
-from flask import Flask, request  # لإضافة السيرفر ومعالجة الطلبات
+from flask import Flask, request
 import requests
-from keep_alive import keep_alive  # تشغيل السيرفر للحفاظ على النشاط
 
 #########
 # إعدادات Aliexpress API
@@ -22,6 +21,9 @@ TRACKING_ID = 'default'
 # إعدادات Telegram Bot
 API_KEY = '5337612436:AAEfcTXDOXpR_8qQei9lB_4OrCuN8D6kJn0'
 bot = telebot.TeleBot(API_KEY)
+
+# إعداد Flask
+app = Flask(__name__)
 
 #########
 # دالة لاستخراج الروابط
@@ -89,7 +91,6 @@ def modify_link(message):
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
 
-        # تحسين معالجة الأخطاء عند طلب التفاصيل
         try:
             product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
             product_details = aliexpress.get_products_details([product_id])[0]
@@ -113,11 +114,10 @@ def modify_link(message):
 
     except Exception as e:
         bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط. الرجاء التأكد من الرابط أو المحاولة لاحقًا.")
-        bot.delete_message(message.chat.id, processing_msg.message_id)
 
 #########
 # إعداد Webhook
-WEBHOOK_HOST = 'https://bot2-ak10.onrender.com'  # ضع رابط مشروعك على Render هنا
+WEBHOOK_HOST = 'https://bot2-ak10.onrender.com'
 WEBHOOK_PATH = '/webhook'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -127,8 +127,6 @@ bot.set_webhook(url=WEBHOOK_URL)
 
 #########
 # تشغيل Flask لمعالجة طلبات Webhook
-app = Flask(__name__)
-
 @app.route(WEBHOOK_PATH, methods=['POST'])
 def webhook():
     """معالجة الطلبات القادمة من Telegram API عبر Webhook."""
@@ -142,7 +140,7 @@ def home():
 
 #########
 # تشغيل التطبيق على المنفذ المناسب
-import os
-
-PORT = int(os.environ.get("PORT", 8080))  # Render يوفر المنفذ 8080 بشكل افتراضي
-app.run(host="0.0.0.0", port=PORT)  # تشغيل التطبيق على هذا المنفذ
+if __name__ == '__main__':
+    import os
+    PORT = int(os.environ.get("PORT", 8080))  # Render يوفر المنفذ 8080 بشكل افتراضي
+    app.run(host="0.0.0.0", port=PORT)  # تشغيل التطبيق على هذا المنفذ
