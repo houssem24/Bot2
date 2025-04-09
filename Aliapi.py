@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # coding: utf-8
-
 import json
 import re
 import urllib.parse
@@ -11,6 +10,7 @@ from aliexpress_api import AliexpressApi, models
 from telebot import types
 from flask import Flask, request
 import requests
+import os  # لإدارة المتغيرات البيئية
 
 #########
 # إعدادات Aliexpress API
@@ -92,12 +92,14 @@ def modify_link(message):
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
 
         try:
+            # تحليل رابط المنتج والحصول على التفاصيل
             product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
             product_details = aliexpress.get_products_details([product_id])[0]
             product_title = getattr(product_details, 'product_title', 'غير متوفر')
             target_sale_price = getattr(product_details, 'target_sale_price', 'غير متوفر')
             discount = getattr(product_details, 'discount', 'غير متوفر')
 
+            # صياغة رسالة العرض
             offer_msg = (
                 f"<b>🎯 تفاصيل المنتج:</b>\n\n"
                 f"❇️ <b>اسم المنتج:</b> {product_title}\n"
@@ -136,11 +138,11 @@ def webhook():
 
 @app.route('/')
 def home():
+    """صفحة رئيسية لتأكيد أن السيرفر يعمل."""
     return "The bot is running successfully!"
 
 #########
 # تشغيل التطبيق على المنفذ المناسب
 if __name__ == '__main__':
-    import os
     PORT = int(os.environ.get("PORT", 8080))  # Render يوفر المنفذ 8080 بشكل افتراضي
     app.run(host="0.0.0.0", port=PORT)  # تشغيل التطبيق على هذا المنفذ
