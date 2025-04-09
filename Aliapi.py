@@ -88,18 +88,36 @@ def modify_link(message):
         # جلب روابط التخفيض باستخدام Aliexpress API
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
-        bot.delete_message(message.chat.id, processing_msg.message_id)
 
-        # إعداد رسالة العرض
-        offer_msg = f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}"
-        bot.reply_to(message, offer_msg, parse_mode='HTML')
+        # تحسين معالجة الأخطاء عند طلب التفاصيل
+        try:
+            product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
+            product_details = aliexpress.get_products_details([product_id])[0]
+            product_title = getattr(product_details, 'product_title', 'غير متوفر')
+            target_sale_price = getattr(product_details, 'target_sale_price', 'غير متوفر')
+            discount = getattr(product_details, 'discount', 'غير متوفر')
+
+            offer_msg = (
+                f"<b>🎯 تفاصيل المنتج:</b>\n\n"
+                f"❇️ <b>اسم المنتج:</b> {product_title}\n"
+                f"💰 <b>السعر الحالي:</b> {target_sale_price}\n"
+                f"📉 <b>التخفيض:</b> {discount}\n"
+                f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}\n\n"
+                f"✅ شكراً لاستخدامك البوت!"
+            )
+            bot.delete_message(message.chat.id, processing_msg.message_id)
+            bot.reply_to(message, offer_msg, parse_mode='HTML')
+        except Exception as e:
+            bot.reply_to(message, f"⚠️ حدث خطأ أثناء جلب تفاصيل المنتج: {e}")
+            bot.delete_message(message.chat.id, processing_msg.message_id)
 
     except Exception as e:
-        bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط: {e}")
+        bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط. الرجاء التأكد من الرابط أو المحاولة لاحقًا.")
+        bot.delete_message(message.chat.id, processing_msg.message_id)
 
 #########
 # إعداد Webhook
-WEBHOOK_HOST = 'https://bot2-ak10.onrender.com/webhook'  # ضع رابط مشروعك على Render هنا
+WEBHOOK_HOST = 'https://bot2-ak10.onrender.com'  # ضع رابط مشروعك على Render هنا
 WEBHOOK_PATH = '/webhook'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
