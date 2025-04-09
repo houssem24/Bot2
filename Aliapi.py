@@ -59,7 +59,7 @@ def send_welcome(message):
 📌 تابع قناتنا للمزيد: <a href="https://t.me/bestcoupondz">@bestcoupondz</a>
         '''
         bot.reply_to(message, msg, parse_mode='HTML')
-        print(f"Replied to /start from {message.chat.username}")
+        print(f"Replied to /start from user: {message.chat.username}")
     except Exception as e:
         print(f"Error in send_welcome: {e}")
 
@@ -70,9 +70,14 @@ def modify_link(message):
     try:
         """معالجة الروابط للتحقق منها وتحويلها إذا كانت مختصرة."""
         original_text = message.text
+        print(f"Received message: {original_text}")
+
+        # استخراج الروابط من النص
         urls = extract_links(original_text)
+        print(f"Extracted URLs: {urls}")
 
         if not urls:
+            # الرد إذا لم يتم العثور على روابط
             markup = types.InlineKeyboardMarkup()
             button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/bestcoupondz")
             markup.add(button)
@@ -81,17 +86,23 @@ def modify_link(message):
 
         original_link = urls[0]
         resolved_link = resolve_shortened_link(original_link)
+        print(f"Resolved Link: {resolved_link}")
+
         if resolved_link is None:
             bot.reply_to(message, "⚠️ لم يتمكن البوت من تحليل الرابط المختصر. يرجى التأكد من صحة الرابط.")
             return
 
+        # تجهيز معالجة الرابط
         processing_msg = bot.reply_to(message, "⏳ يتم معالجة الرابط للحصول على أفضل التخفيضات...")
-        
-        # استخدم Aliexpress API لجلب التفاصيل
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
+        print(f"Affiliate Links: {affiliate_links}")
+
         product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
         product = aliexpress.get_products_details([product_id])[0]
+        print(f"Product Details: {product}")
+
+        # جلب تفاصيل المنتج
         product_title = getattr(product, 'product_title', 'غير متوفر')
         target_sale_price = getattr(product, 'target_sale_price', 'غير متوفر')
         discount = getattr(product, 'discount', 'غير متوفر')
@@ -104,8 +115,11 @@ def modify_link(message):
             f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}\n\n"
             f"✅ شكراً لاستخدامك البوت!"
         )
+
         bot.delete_message(message.chat.id, processing_msg.message_id)
         bot.reply_to(message, offer_msg, parse_mode='HTML')
+        print("Message sent successfully!")
+
     except Exception as e:
         bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط: {e}")
         print(f"Error in modify_link: {e}")
