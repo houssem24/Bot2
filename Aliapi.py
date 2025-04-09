@@ -117,7 +117,7 @@ def modify_link(message):
 
 #########
 # إعداد Webhook
-WEBHOOK_HOST = 'https://bot2-ak10.onrender.com'
+WEBHOOK_HOST = 'https://bot2-wtdw.onrender.com/webhook'
 WEBHOOK_PATH = '/webhook'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
