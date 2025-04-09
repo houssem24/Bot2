@@ -115,7 +115,7 @@ def modify_link(message):
 
 #########
 # إعداد Webhook
-WEBHOOK_URL = 'https://bot2-wtdw.onrender.com/webhook'  # تم تعديل الرابط
+WEBHOOK_URL = 'https://bot2-wtdw.onrender.com/webhook'
 
 # تعيين Webhook
 bot.remove_webhook()
@@ -126,8 +126,12 @@ bot.set_webhook(url=WEBHOOK_URL)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """معالجة الطلبات القادمة من Telegram API عبر Webhook."""
-    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
-    bot.process_new_updates([update])
+    try:
+        update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+        print(f"Received update: {update}")  # Debugging
+        bot.process_new_updates([update])
+    except Exception as e:
+        print(f"Error in webhook: {e}")  # Debugging errors
     return "ok", 200
 
 @app.route('/')
