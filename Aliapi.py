@@ -6,11 +6,12 @@ import json
 import re
 import urllib.parse
 from urllib.parse import urlparse, parse_qs, urlunparse
-import telebot  # type: ignore
+import telebot  # Telegram API library
 from aliexpress_api import AliexpressApi, models
 from telebot import types
 from flask import Flask, request  # لإضافة السيرفر ومعالجة الطلبات
 import requests
+from keep_alive import keep_alive  # تشغيل السيرفر للحفاظ على النشاط
 
 #########
 # إعدادات Aliexpress API
@@ -22,9 +23,7 @@ TRACKING_ID = 'default'
 API_KEY = '5337612436:AAEfcTXDOXpR_8qQei9lB_4OrCuN8D6kJn0'
 bot = telebot.TeleBot(API_KEY)
 
-# سيرفر Flask
-app = Flask(__name__)
-
+#########
 # دالة لاستخراج الروابط
 def extract_links(text):
     """استخراج الروابط من النصوص."""
@@ -40,6 +39,7 @@ def resolve_shortened_link(shortened_url):
     except requests.exceptions.RequestException:
         return None
 
+#########
 # الرد على أوامر البداية
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
@@ -59,6 +59,7 @@ def send_welcome(message):
     '''
     bot.reply_to(message, msg, parse_mode='HTML')
 
+#########
 # التعامل مع الروابط المرسلة
 @bot.message_handler(func=lambda message: True)
 def modify_link(message):
@@ -96,6 +97,7 @@ def modify_link(message):
     except Exception as e:
         bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط: {e}")
 
+#########
 # إعداد Webhook
 WEBHOOK_HOST = 'https://your-render-url.onrender.com'  # ضع رابط مشروعك على Render هنا
 WEBHOOK_PATH = '/webhook'
@@ -104,6 +106,10 @@ WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 # تعيين Webhook
 bot.remove_webhook()
 bot.set_webhook(url=WEBHOOK_URL)
+
+#########
+# تشغيل Flask لمعالجة طلبات Webhook
+app = Flask(__name__)
 
 @app.route(WEBHOOK_PATH, methods=['POST'])
 def webhook():
@@ -116,5 +122,6 @@ def webhook():
 def home():
     return "The bot is running successfully!"
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+#########
+# التأكد أن السيرفر يعمل
+keep_alive()
