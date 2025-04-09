@@ -144,4 +144,7 @@ def home():
 # التأكد أن السيرفر يعمل
 keep_alive()
 
-# نهاية الملف
+# تشغيل التطبيق على المنفذ المناسب
+import os
+PORT = int(os.environ.get("PORT", 5000))  # استخدام المنفذ الافتراضي
+app.run(host="0.0.0.0", port=PORT)
