@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
 # coding: utf-8
-import json
-import re
-import urllib.parse
-from urllib.parse import urlparse, parse_qs, urlunparse
-import telebot  # Telegram API library
+import telebot
+from urllib.parse import urlparse, urlunparse
 from aliexpress_api import AliexpressApi, models
+import re
 from telebot import types
-from flask import Flask, request
 import requests
-import os  # لإدارة المتغيرات البيئية
+from flask import Flask, request
+import os
 
 #########
 # إعدادات Aliexpress API
@@ -22,7 +20,7 @@ TRACKING_ID = 'default'
 API_KEY = '5337612436:AAEfcTXDOXpR_8qQei9lB_4OrCuN8D6kJn0'
 bot = telebot.TeleBot(API_KEY)
 
-# إعداد Flask
+# إعداد Flask للسيرفر
 app = Flask(__name__)
 
 #########
@@ -57,7 +55,7 @@ def send_welcome(message):
 🔹 انتظر لتحصل على رابط التخفيض الأفضل!
 
 🎉 شكراً لاستخدامك البوت!
-📌 تابع قناتنا للمزيد: <a href="https://t.me/Aliexpressgetcod_bot">@Aliexpressgetcod_bot</a>
+📌 تابع قناتنا للمزيد: <a href="https://t.me/bestcoupondz">@bestcoupondz</a>
     '''
     bot.reply_to(message, msg, parse_mode='HTML')
 
@@ -72,56 +70,52 @@ def modify_link(message):
     if not urls:
         # إذا لم يتم العثور على روابط
         markup = types.InlineKeyboardMarkup()
-        button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/Aliexpressgetcod_bot")
+        button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/bestcoupondz")
         markup.add(button)
         bot.reply_to(message, "⚠️ لم يتم العثور على روابط في رسالتك. يرجى إرسال رابط منتج!", reply_markup=markup)
         return
 
     try:
         original_link = urls[0]
+        
+        # تحويل الرابط إذا كان مختصرًا
         resolved_link = resolve_shortened_link(original_link)
         if resolved_link is None:
             bot.reply_to(message, "⚠️ لم يتمكن البوت من تحليل الرابط المختصر. يرجى التأكد من صحة الرابط.")
             return
 
-        # إعداد رسالة المعالجة
         processing_msg = bot.reply_to(message, "⏳ يتم معالجة الرابط للحصول على أفضل التخفيضات...")
-
-        # جلب روابط التخفيض باستخدام Aliexpress API
+        
+        # استخدم Aliexpress API لجلب التفاصيل
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
+        product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
 
-        try:
-            # تحليل رابط المنتج والحصول على التفاصيل
-            product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
-            product_details = aliexpress.get_products_details([product_id])[0]
-            product_title = getattr(product_details, 'product_title', 'غير متوفر')
-            target_sale_price = getattr(product_details, 'target_sale_price', 'غير متوفر')
-            discount = getattr(product_details, 'discount', 'غير متوفر')
+        # جلب تفاصيل المنتج
+        product = aliexpress.get_products_details([product_id])[0]
+        product_title = getattr(product, 'product_title', 'غير متوفر')
+        target_sale_price = getattr(product, 'target_sale_price', 'غير متوفر')
+        discount = getattr(product, 'discount', 'غير متوفر')
 
-            # صياغة رسالة العرض
-            offer_msg = (
-                f"<b>🎯 تفاصيل المنتج:</b>\n\n"
-                f"❇️ <b>اسم المنتج:</b> {product_title}\n"
-                f"💰 <b>السعر الحالي:</b> {target_sale_price}\n"
-                f"📉 <b>التخفيض:</b> {discount}\n"
-                f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}\n\n"
-                f"✅ شكراً لاستخدامك البوت!"
-            )
-            bot.delete_message(message.chat.id, processing_msg.message_id)
-            bot.reply_to(message, offer_msg, parse_mode='HTML')
-        except Exception as e:
-            bot.reply_to(message, f"⚠️ حدث خطأ أثناء جلب تفاصيل المنتج: {e}")
-            bot.delete_message(message.chat.id, processing_msg.message_id)
+        # إعداد رسالة الرد
+        offer_msg = (
+            f"<b>🎯 تفاصيل المنتج:</b>\n\n"
+            f"❇️ <b>اسم المنتج:</b> {product_title}\n"
+            f"💰 <b>السعر الحالي:</b> {target_sale_price}\n"
+            f"📉 <b>التخفيض:</b> {discount}\n"
+            f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}\n\n"
+            f"✅ شكراً لاستخدامك البوت!"
+        )
+
+        bot.delete_message(message.chat.id, processing_msg.message_id)
+        bot.reply_to(message, offer_msg, parse_mode='HTML')
 
     except Exception as e:
-        bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط. الرجاء التأكد من الرابط أو المحاولة لاحقًا.")
+        bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط: {e}")
 
 #########
 # إعداد Webhook
-WEBHOOK_HOST = 'https://bot2-wtdw.onrender.com'
-WEBHOOK_PATH = '/webhook'
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+WEBHOOK_URL = 'https://bot2-wtdw.onrender.com/webhook'  # تم تعديل الرابط
 
 # تعيين Webhook
 bot.remove_webhook()
@@ -129,7 +123,7 @@ bot.set_webhook(url=WEBHOOK_URL)
 
 #########
 # تشغيل Flask لمعالجة طلبات Webhook
-@app.route(WEBHOOK_PATH, methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     """معالجة الطلبات القادمة من Telegram API عبر Webhook."""
     update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
