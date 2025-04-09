@@ -99,7 +99,7 @@ def modify_link(message):
 
 #########
 # إعداد Webhook
-WEBHOOK_HOST = 'https://your-render-url.onrender.com'  # ضع رابط مشروعك على Render هنا
+WEBHOOK_HOST = 'https://bot2-ak10.onrender.com/webhook'  # ضع رابط مشروعك على Render هنا
 WEBHOOK_PATH = '/webhook'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
