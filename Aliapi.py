@@ -13,6 +13,7 @@ from aliexpress_api import AliexpressApi, models
 from keep_alive import keep_alive
 from telebot import types
 from flask import Flask  # لإضافة السيرفر
+import requests
 #########
 # إعدادات Aliexpress API
 KEY = '511252'
