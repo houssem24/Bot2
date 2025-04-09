@@ -5,7 +5,7 @@
 import json
 import re
 import urllib.parse
-from urllib.parse import urlparse, parse_qs, urlunparse
+from urllib.parse import urlparse, parse_qs, urlunparse  # أضف urlunparse هنا
 import telebot  # Telegram API library
 from aliexpress_api import AliexpressApi, models
 from telebot import types
