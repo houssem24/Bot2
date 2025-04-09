@@ -43,8 +43,9 @@ def resolve_shortened_link(shortened_url):
 # الرد على أوامر البداية
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
-    """إرسال رسالة ترحيب للمستخدم."""
-    msg = '''
+    try:
+        """إرسال رسالة ترحيب للمستخدم."""
+        msg = '''
 👋 <b>مرحبًا بك في بوت التخفيضات @Aliexpressgetcod_bot</b>
 
 ✅ مهمتي هي مساعدتك للحصول على أفضل العروض ونسبة تخفيض بالنقاط تصل إلى 70%!
@@ -56,29 +57,29 @@ def send_welcome(message):
 
 🎉 شكراً لاستخدامك البوت!
 📌 تابع قناتنا للمزيد: <a href="https://t.me/bestcoupondz">@bestcoupondz</a>
-    '''
-    bot.reply_to(message, msg, parse_mode='HTML')
+        '''
+        bot.reply_to(message, msg, parse_mode='HTML')
+        print(f"Replied to /start from {message.chat.username}")
+    except Exception as e:
+        print(f"Error in send_welcome: {e}")
 
 #########
 # التعامل مع الروابط المرسلة
 @bot.message_handler(func=lambda message: True)
 def modify_link(message):
-    """معالجة الروابط للتحقق منها وتحويلها إذا كانت مختصرة."""
-    original_text = message.text
-    urls = extract_links(original_text)
-
-    if not urls:
-        # إذا لم يتم العثور على روابط
-        markup = types.InlineKeyboardMarkup()
-        button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/bestcoupondz")
-        markup.add(button)
-        bot.reply_to(message, "⚠️ لم يتم العثور على روابط في رسالتك. يرجى إرسال رابط منتج!", reply_markup=markup)
-        return
-
     try:
+        """معالجة الروابط للتحقق منها وتحويلها إذا كانت مختصرة."""
+        original_text = message.text
+        urls = extract_links(original_text)
+
+        if not urls:
+            markup = types.InlineKeyboardMarkup()
+            button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/bestcoupondz")
+            markup.add(button)
+            bot.reply_to(message, "⚠️ لم يتم العثور على روابط في رسالتك. يرجى إرسال رابط منتج!", reply_markup=markup)
+            return
+
         original_link = urls[0]
-        
-        # تحويل الرابط إذا كان مختصرًا
         resolved_link = resolve_shortened_link(original_link)
         if resolved_link is None:
             bot.reply_to(message, "⚠️ لم يتمكن البوت من تحليل الرابط المختصر. يرجى التأكد من صحة الرابط.")
@@ -90,14 +91,11 @@ def modify_link(message):
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
         product_id = re.search(r"(\d+)\.html", resolved_link).group(1)
-
-        # جلب تفاصيل المنتج
         product = aliexpress.get_products_details([product_id])[0]
         product_title = getattr(product, 'product_title', 'غير متوفر')
         target_sale_price = getattr(product, 'target_sale_price', 'غير متوفر')
         discount = getattr(product, 'discount', 'غير متوفر')
 
-        # إعداد رسالة الرد
         offer_msg = (
             f"<b>🎯 تفاصيل المنتج:</b>\n\n"
             f"❇️ <b>اسم المنتج:</b> {product_title}\n"
@@ -106,12 +104,11 @@ def modify_link(message):
             f"🔗<b>رابط التخفيض:</b> {affiliate_links[0].promotion_link}\n\n"
             f"✅ شكراً لاستخدامك البوت!"
         )
-
         bot.delete_message(message.chat.id, processing_msg.message_id)
         bot.reply_to(message, offer_msg, parse_mode='HTML')
-
     except Exception as e:
         bot.reply_to(message, f"⚠️ حدث خطأ أثناء معالجة الرابط: {e}")
+        print(f"Error in modify_link: {e}")
 
 #########
 # إعداد Webhook
@@ -125,22 +122,20 @@ bot.set_webhook(url=WEBHOOK_URL)
 # تشغيل Flask لمعالجة طلبات Webhook
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """معالجة الطلبات القادمة من Telegram API عبر Webhook."""
     try:
         update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
-        print(f"Received update: {update}")  # Debugging
+        print(f"Received update: {update}")
         bot.process_new_updates([update])
     except Exception as e:
-        print(f"Error in webhook: {e}")  # Debugging errors
+        print(f"Error in webhook: {e}")
     return "ok", 200
 
 @app.route('/')
 def home():
-    """صفحة رئيسية لتأكيد أن السيرفر يعمل."""
     return "The bot is running successfully!"
 
 #########
 # تشغيل التطبيق على المنفذ المناسب
 if __name__ == '__main__':
-    PORT = int(os.environ.get("PORT", 8080))  # Render يوفر المنفذ 8080 بشكل افتراضي
-    app.run(host="0.0.0.0", port=PORT)  # تشغيل التطبيق على هذا المنفذ
+    PORT = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=PORT)
