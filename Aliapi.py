@@ -141,10 +141,8 @@ def home():
     return "The bot is running successfully!"
 
 #########
-# التأكد أن السيرفر يعمل
-keep_alive()
-
 # تشغيل التطبيق على المنفذ المناسب
 import os
-PORT = int(os.environ.get("PORT", 5000))  # استخدام المنفذ الافتراضي
-app.run(host="0.0.0.0", port=PORT)
+
+PORT = int(os.environ.get("PORT", 8080))  # Render يوفر المنفذ 8080 بشكل افتراضي
+app.run(host="0.0.0.0", port=PORT)  # تشغيل التطبيق على هذا المنفذ
