@@ -35,8 +35,10 @@ def resolve_shortened_link(shortened_url):
     """تحويل الرابط المختصر إلى الرابط الأصلي."""
     try:
         response = requests.get(shortened_url, allow_redirects=True, timeout=5)
+        print(f"Resolved URL: {response.url}")
         return response.url  # إرجاع الرابط النهائي بعد إعادة التوجيه
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"Error resolving shortened link: {e}")
         return None
 
 #########
@@ -77,11 +79,7 @@ def modify_link(message):
         print(f"Extracted URLs: {urls}")
 
         if not urls:
-            # الرد إذا لم يتم العثور على روابط
-            markup = types.InlineKeyboardMarkup()
-            button = types.InlineKeyboardButton("🔥 قناتنا 🔥", url="https://t.me/bestcoupondz")
-            markup.add(button)
-            bot.reply_to(message, "⚠️ لم يتم العثور على روابط في رسالتك. يرجى إرسال رابط منتج!", reply_markup=markup)
+            bot.reply_to(message, "⚠️ لم يتم العثور على روابط في رسالتك. يرجى إرسال رابط منتج!")
             return
 
         original_link = urls[0]
@@ -92,8 +90,7 @@ def modify_link(message):
             bot.reply_to(message, "⚠️ لم يتمكن البوت من تحليل الرابط المختصر. يرجى التأكد من صحة الرابط.")
             return
 
-        # تجهيز معالجة الرابط
-        processing_msg = bot.reply_to(message, "⏳ يتم معالجة الرابط للحصول على أفضل التخفيضات...")
+        # معالجة الرابط باستخدام Aliexpress API
         aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.USD, TRACKING_ID)
         affiliate_links = aliexpress.get_affiliate_links(resolved_link)
         print(f"Affiliate Links: {affiliate_links}")
@@ -116,7 +113,6 @@ def modify_link(message):
             f"✅ شكراً لاستخدامك البوت!"
         )
 
-        bot.delete_message(message.chat.id, processing_msg.message_id)
         bot.reply_to(message, offer_msg, parse_mode='HTML')
         print("Message sent successfully!")
 
